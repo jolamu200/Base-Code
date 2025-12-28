@@ -12,11 +12,11 @@ const verifiedContact = {
     },
     message: {
         contactMessage: {
-            displayName: "nova xmd verified ✅",
+            displayName: "Nova Xmd Verified ✅",
             vcard: `BEGIN:VCARD
 VERSION:3.0
-FN:Nova Xmd Verified
-ORG:Nova Xmd Bot;
+FN:Nova Xmd verified
+ORG:Nova Xmd BOT;
 TEL;type=CELL;type=VOICE;waid:${config.OWNER_NUMBER || "0000000000"}:+${config.OWNER_NUMBER || "0000000000"}
 END:VCARD`
         }
@@ -30,7 +30,7 @@ const newsletterContext = {
         isForwarded: true,
         forwardedNewsletterMessageInfo: {
             newsletterJid: '120363382023564830@newsletter', // Add your newsletter JID here
-            newsletterName: 'nova xmd image',
+            newsletterName: 'Nova Xmd Updates',
             serverMessageId: 143
         }
     }
