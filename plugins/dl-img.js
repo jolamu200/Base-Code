@@ -1,86 +1,55 @@
+Wwkea newsletterJid na ile contact verify
+
 const { cmd } = require("../command");
 const axios = require("axios");
 
 const UNSPLASH_API_KEY = "TKwNF_gHeB4Z6ieR6sV_Q8gIkQW_VFOcmiNfD0AX0uM"; // Your Access Key
 
-// VERIFIED CONTACT (Popkids style)
-const verifiedContact = {
-    key: {
-        fromMe: false,
-        participant: `0@s.whatsapp.net`,
-        remoteJid: "status@broadcast"
-    },
-    message: {
-        contactMessage: {
-            displayName: "Nova Xmd Verified ✅",
-            vcard: `BEGIN:VCARD
-VERSION:3.0
-FN:Nova Xmd verified
-ORG:Nova Xmd BOT;
-TEL;type=CELL;type=VOICE;waid:${config.OWNER_NUMBER || "0000000000"}:+${config.OWNER_NUMBER || "0000000000"}
-END:VCARD`
-        }
-    }
-};
-
-// Newsletter / forwarding context
-const newsletterContext = {
-    contextInfo: {
-        forwardingScore: 999,
-        isForwarded: true,
-        forwardedNewsletterMessageInfo: {
-            newsletterJid: '120363382023564830@newsletter', // Add your newsletter JID here
-            newsletterName: 'Nova Xmd Updates',
-            serverMessageId: 143
-        }
-    }
-};
-
 cmd({
-    pattern: "img",
-    alias: ["image", "searchimg"],
-    react: "📸",
-    desc: "Search and download images from Unsplash",
-    category: "fun",
-    use: ".img <keywords> [number_of_images]",
-    filename: __filename
+pattern: "img",
+alias: ["image", "searchimg"],
+react: "🫧",
+desc: "Search and download images from Unsplash",
+category: "fun",
+use: ".img <keywords> [number_of_images]",
+filename: __filename
 }, async (conn, mek, m, { reply, args, from }) => {
-    try {
-        if (!args.length) 
-            return reply("📸 Please provide a search query\nExample: .img cute cats 3");
+try {
+if (!args.length)
+return reply("📸 Please provide a search query\nExample: .img cute cats 3");
 
-        // Determine count of images
-        let count = parseInt(args[args.length - 1]);
-        if (isNaN(count)) count = 3; // Default 3 images
+// Determine count of images  
+    let count = parseInt(args[args.length - 1]);  
+    if (isNaN(count)) count = 3; // Default 3 images  
 
-        const query = args.slice(0, isNaN(args[args.length - 1]) ? args.length : -1).join(" ");
+    const query = args.slice(0, isNaN(args[args.length - 1]) ? args.length : -1).join(" ");  
 
-        await reply(`🔍 Searching Unsplash for "${query}"...`);
+    await reply(`🔍 Searching Unsplash for "${query}"...`);  
 
-        const url = `https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&per_page=${count}&client_id=${UNSPLASH_API_KEY}`;
-        const { data } = await axios.get(url);
+    const url = `https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&per_page=${count}&client_id=${UNSPLASH_API_KEY}`;  
+    const { data } = await axios.get(url);  
 
-        if (!data.results || !data.results.length) 
-            return reply("❌ No images found. Try different keywords");
+    if (!data.results || !data.results.length)   
+        return reply("❌ No images found. Try different keywords");  
 
-        // Randomize results
-        const selectedImages = data.results.sort(() => 0.5 - Math.random()).slice(0, count);
+    // Randomize results  
+    const selectedImages = data.results.sort(() => 0.5 - Math.random()).slice(0, count);  
 
-        for (const image of selectedImages) {
-            await conn.sendMessage(
-                from,
-                {
-                    image: { url: image.urls.regular },
-                    caption: `*🔎 Result for*: ${query}\n> *ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝙽𝙾𝚅𝙰-𝚇𝙼𝙳*`,
-                    ...newsletterContext
-                },
-                { quoted: verifiedContact }
-            );
-            await new Promise(resolve => setTimeout(resolve, 1000)); // Avoid rate limit
-        }
+    for (const image of selectedImages) {  
+        await conn.sendMessage(  
+            from,  
+            {  
+                image: { url: image.urls.regular },  
+                caption: `*🔎 Result for*: ${query}\n> *ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝙽𝙾𝚅𝙰-𝚇𝙼𝙳*`  
+            },  
+            { quoted: mek }  
+        );  
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Avoid rate limit  
+    }  
 
-    } catch (error) {
-        console.error("Image Search Error:", error);
-        reply(`❌ Error fetching images: ${error.message || "Unknown error"}`);
-    }
+} catch (error) {  
+    console.error("Image Search Error:", error);  
+    reply(`❌ Error fetching images: ${error.message || "Unknown error"}`);  
+}
+
 });
