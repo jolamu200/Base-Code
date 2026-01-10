@@ -1,6 +1,6 @@
 /**
  * yt-play.js
- * Plugin adapted for jolamu200/Base-Code repository
+ * Pluins command play song enjoy
  *
  * Requires: axios, yt-search
  * Install: npm i axios yt-search
@@ -14,10 +14,10 @@ const config = require("../config");
 // Helper context info (match other plugins)
 const NEWSLETTER_JID = "120363382023564830@newsletter";
 const NEWSLETTER_NAME = "Bmb Tech Info";
-const BOT = config.botName || "B.M.B-TECH";
+const BOT = config.botName || "Nova-Xmd";
 
 const buildCaption = (type, video) => {
-  const banner = type === "video" ? `${BOT} VIDEO PLAYER` : `${BOT} SONG PLAYER`;
+  const banner = type === "video" ? `NOVA XMD VIDEO PLAYER` : `NOVA XMD SONG PLAYER`;
   const views = typeof video.views === "number" ? video.views.toLocaleString() : video.views || "N/A";
   const ago = video.ago || video.timestamp || "N/A";
   const channel = (video.author && video.author.name) || video.author || "Unknown";
@@ -51,7 +51,7 @@ const BASE_URL = process.env.BASE_URL || "https://noobs-api.top";
 
 /* ========== PLAY (audio stream) ========== */
 cmd({
-  pattern: "play11",
+  pattern: "play",
   alias: ["p"],
   use: ".play <song name>",
   react: "🎵",
@@ -96,7 +96,7 @@ async (conn, mek, m, { from, args, q, quoted, isCmd, reply }) => {
 
 /* ========== SONG (mp3 as document) ========== */
 cmd({
-  pattern: "song11",
+  pattern: "song",
   alias: ["mp3"],
   use: ".song <song name>",
   react: "🎶",
@@ -140,7 +140,7 @@ async (conn, mek, m, { from, args, q, quoted }) => {
 
 /* ========== VIDEO (mp4) ========== */
 cmd({
-  pattern: "video11",
+  pattern: "video",
   alias: ["mp4"],
   use: ".video <video name>",
   react: "🎬",
