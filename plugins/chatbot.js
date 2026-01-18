@@ -1,10 +1,9 @@
-require("dotenv").config(); // in load API key from .env
 const { cmd } = require("../command");
-const config = require("../config");
+const config = require("../config"); // API_KEY itatumika kutoka hapa
 const fetch = require("node-fetch");
 const { sendButtons } = require("gifted-btns");
 
-const API_KEY = process.env.OPENAI_API_KEY; // API key from .env
+const API_KEY = config.API_KEY; // in load API key kutoka config.js
 const API_URL = "https://openrouter.ai/api/v1/chat/completions";
 
 /**
