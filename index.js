@@ -280,9 +280,10 @@ setInterval(async () => {
       const from = mek.key.remoteJid
       const quoted = type == 'extendedTextMessage' && mek.message.extendedTextMessage.contextInfo != null ? mek.message.extendedTextMessage.contextInfo.quotedMessage || [] : []
       const body = (type === 'conversation') ? mek.message.conversation : (type === 'extendedTextMessage') ? mek.message.extendedTextMessage.text : (type == 'imageMessage') && mek.message.imageMessage.caption ? mek.message.imageMessage.caption : (type == 'videoMessage') && mek.message.videoMessage.caption ? mek.message.videoMessage.caption : ''
-      const isCmd = body.startsWith(prefix)
-      var budy = typeof mek.text == 'string' ? mek.text : false
-      const command = isCmd ? body.slice(prefix.length).trim().split(' ').shift().toLowerCase() : ''
+        // ✅ FIXED: Using config.PREFIX directly for dynamic updates
+  const isCmd = body.startsWith(config.PREFIX)
+  var budy = typeof mek.text == 'string' ? mek.text : false;
+  const command = isCmd ? body.slice(config.PREFIX.length).trim().split(' ').shift().toLowerCase() : ''
       const args = body.trim().split(/ +/).slice(1)
       const q = args.join(' ')
       const text = args.join(' ')
