@@ -1,85 +1,82 @@
-const config = require('../config');
-const { cmd } = require('../command');
-const { getGroupAdmins } = require('../lib/functions');
-
-// Contact message for verified context
-const quotedContact = {
-  key: {
-    fromMe: false,
-    participant: `0@s.whatsapp.net`,
-    remoteJid: "status@broadcast"
-  },
-  message: {
-    contactMessage: {
-      displayName: "B.M.B VERIFIED ✅",
-      vcard: "BEGIN:VCARD\nVERSION:3.0\nFN:B.M.B VERIFIED ✅\nORG:BMB-TECH BOT;\nTEL;type=CELL;type=VOICE;waid=255767862457:+255 767 862457\nEND:VCARD"
-    }
-  }
-};
+const config = require('../config')
+const { cmd, commands } = require('../command')
+const { getBuffer, getGroupAdmins, getRandom, h2k, isUrl, Json, runtime, sleep, fetchJson } = require('../lib/functions')
 
 cmd({
-  pattern: "tagall",
-  react: "🔊",
-  alias: ["gc_tagall"],
-  desc: "To Tag all Members",
-  category: "group",
-  use: '.tagall [message]',
-  filename: __filename
+    pattern: "tagall",
+    react: "🔊",
+    alias: ["gc_tagall"],
+    desc: "To Tag all Members",
+    category: "group",
+    use: '.tagall [message]',
+    filename: __filename
 },
-async (conn, mek, m, { from, participants, reply, isGroup, senderNumber, groupAdmins, command, body }) => {
-  try {
-    if (!isGroup) return reply("❌ This command can only be used in groups.");
-
-    const botOwner = conn.user.id.split(":")[0];
-    const senderJid = senderNumber + "@s.whatsapp.net";
-
-    if (!groupAdmins.includes(senderJid) && senderNumber !== botOwner) {
-      return reply("❌ Only group admins or the bot owner can use this command.");
-    }
-
-    const groupInfo = await conn.groupMetadata(from).catch(() => null);
-    if (!groupInfo) return reply("❌ Failed to fetch group info.");
-
-    const groupName = groupInfo.subject || "Unknown Group";
-    const totalMembers = participants.length;
-
-    const emojis = ['📢','🔊','🌐','🔰','❤‍🩹','🤍','🖤','🩵','📝','💗','🔖','🪩','📦','🎉','🛡️','💸','⏳','🗿','🚀','🎧','🪀','⚡','🚩','🍁','🗣️','👻','⚠️','🔥'];
-    const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)];
-
-    const message = body.slice(body.indexOf(command) + command.length).trim() || "📣 Attention Everyone!";
-
-    let teks = `╭───〔 *📢 GROUP MENTION* 〕───⬣
-│
-│ *📛 Group:* ${groupName}
-│ *👥 Members:* ${totalMembers}
-│ *💬 Message:* ${message}
-│
-╰──⊱ Mentioning All ⊰──⬣\n`;
-
-    for (const mem of participants) {
-      if (!mem.id) continue;
-      teks += `${randomEmoji} @${mem.id.split('@')[0]}\n`;
-    }
-
-    teks += `\n╰─⧈ 𝗡𝗢𝗩𝗔 ┃ 𝗫𝗠𝗗 ⧈─⬣`;
-
-    await conn.sendMessage(from, {
-      text: teks,
-      mentions: participants.map(a => a.id),
-      contextInfo: {
-        forwardingScore: 999,
-        isForwarded: true,
-        forwardedNewsletterMessageInfo: {
-          newsletterJid: "120363382023564830@newsletter",
-          newsletterName: "𝙽𝙾𝚅𝙰-𝚇𝙼𝙳",
-          serverMessageId: 1
+async (conn, mek, m, { from, participants, reply, isGroup, isAdmins, isCreator, prefix, command, args, body }) => {
+    try {
+        // ✅ Group check
+        if (!isGroup) {
+            await conn.sendMessage(from, { react: { text: '❌', key: m.key } });
+            return reply("❌ This command can only be used in groups.");
         }
-      }
-    }, { quoted: quotedContact });
 
-  } catch (e) {
-    console.error("TagAll Error:", e);
-    reply(`❌ *Error Occurred !!*\n\n${e.message || e}`);
-  }
+        // ✅ Permission check (Admin OR Bot Owner)
+        if (!isAdmins && !isCreator) {
+            await conn.sendMessage(from, { react: { text: '❌', key: m.key } });
+            return reply("❌ Only group admins or the bot owner can use this command.");
+        }
+
+        // ✅ Fetch group info
+        let groupInfo = await conn.groupMetadata(from).catch(() => null);
+        if (!groupInfo) return reply("❌ Failed to fetch group information.");
+
+        let groupName = groupInfo.subject || "Unknown Group";
+        let totalMembers = participants ? participants.length : 0;
+        if (totalMembers === 0) return reply("❌ No members found in this group.");
+
+        let emojis = ['📢', '🔊', '🌐', '🔰', '❤‍🩹', '🤍', '🖤', '🩵', '📝', '💗', '🔖', '🪩', '📦', '🎉', '🛡️', '💸', '⏳', '🗿', '🚀', '🎧', '🪀', '⚡', '🚩', '🍁', '🗣️', '👻', '⚠️', '🔥'];
+        let randomEmoji = emojis[Math.floor(Math.random() * emojis.length)];
+
+        // ✅ Extract message
+        let message = body.slice(body.indexOf(command) + command.length).trim();
+        if (!message) message = "Attention Everyone";
+
+        let teks = `▢ Group : *${groupName}*\n▢ Members : *${totalMembers}*\n▢ Message: *${message}*\n\n┌───⊷ *MENTIONS*\n`;
+
+        for (let mem of participants) {
+            if (!mem.id) continue;
+            teks += `${randomEmoji} @${mem.id.split('@')[0]}\n`;
+        }
+
+        teks += "└──✪ *Nova Xmd* ✪──";
+
+        // ✅ Send message with NEWSLETTER JID and EXTERNAL AD REPLY
+        await conn.sendMessage(from, { 
+            text: teks, 
+            mentions: participants.map(a => a.id),
+            contextInfo: {
+                isForwarded: true,
+                forwardingScore: 999,
+                forwardedNewsletterMessageInfo: {
+                    newsletterJid: "120363382023564830@newsletter",  // ✅ NEWSLETTER JID
+                    newsletterName: "B.M.B TECH",                     // ✅ NEWSLETTER NAME
+                    serverMessageId: 1
+                },
+                externalAdReply: {
+                    title: "Nova Xmd Bot ⚡",
+                    body: "Tagall • Newsletter • Group Manager",
+                    thumbnailUrl: "https://files.catbox.moe/yz5yle.jpg",  // ✅ Your thumbnail
+                    mediaType: 1,
+                    renderSmallThumbnail: true,
+                    sourceUrl: "https://whatsapp.com/channel/0029VawO6hgF6sn7k3SuVU3z" // Optional
+                }
+            }
+        }, { quoted: mek });
+
+        // ✅ React with newsletter emoji
+        await conn.sendMessage(from, { react: { text: '📨', key: m.key } });
+
+    } catch (e) {
+        console.error("TagAll Error:", e);
+        reply(`❌ *Error Occurred !!*\n\n${e.message || e}`);
+    }
 });
-      
