@@ -1,41 +1,69 @@
 const { cmd } = require('../command');
 const config = require('../config');
 
+// ✅ VERIFIED CONTACT
+const quotedContact = {
+  key: {
+    fromMe: false,
+    participant: `0@s.whatsapp.net`,
+    remoteJid: "status@broadcast"
+  },
+  message: {
+    contactMessage: {
+      displayName: "B.M.B VERIFIED ✅",
+      vcard: "BEGIN:VCARD\nVERSION:3.0\nFN:B.M.B VERIFIED ✅\nORG:BMB-TECH BOT;\nTEL;type=CELL;type=VOICE;waid=255767862457:+255767862457\nEND:VCARD"
+    }
+  }
+};
+
 cmd({
-pattern: "setprefix",
-desc: "Update the bot's command prefix",
-category: "owner",
-react: "⚙️",
-filename: __filename
+  pattern: "setprefix",
+  desc: "Update the bot's command prefix",
+  category: "owner",
+  react: "⚙️",
+  filename: __filename
 }, async (conn, m, mek, { from, reply, text, isOwner }) => {
 
-// 🛡️ Ensure only the owner can change the system prefix  
-if (!isOwner) return reply("*❌ ᴏᴡɴᴇʀ ᴏɴʟʏ ᴄᴏᴍᴍᴀɴᴅ*");  
+  if (!isOwner) return reply("*❌ OWNER ONLY COMMAND*");
 
-// Check if the user actually typed a new prefix  
-if (!text) return reply("*⚠️ ᴘʟᴇᴀsᴇ ᴘʀᴏᴠɪᴅᴇ ᴀ ᴘʀᴇғɪx (ᴇ.ɢ .sᴇᴛᴘʀᴇғɪx !)*");  
+  if (!text) return reply("*⚠️ Please provide a new prefix*\nExample: .setprefix !");
 
-try {  
-    // Update the live config prefix  
-    config.PREFIX = text;  
+  try {
 
-    // Success Reaction  
-    await conn.sendMessage(from, { react: { text: "✅", key: mek.key } });  
+    config.PREFIX = text;
 
-    // Styled POPKID MP3 Response 💝  
-    const caption = `*🔁 NOVA XMD PREFIX🔧*\n\n` +  
-                    `*✨ sᴛᴀᴛᴜs:* ᴘʀᴇғɪx ᴜᴘᴅᴀᴛᴇᴅ ʟɪᴠᴇ\n` +  
-                    `*🎯 ɴᴇᴡ ᴘʀᴇғɪx:* [ ${text} ]\n\n` +  
-                    `> *ᴀʟʟ ᴄᴏᴍᴍᴀɴᴅs ᴡɪʟʟ ɴᴏᴡ ʀᴇsᴘᴏɴᴅ ᴛᴏ ${text}*`;  
+    await conn.sendMessage(from, { react: { text: "✅", key: mek.key } });
 
-    await conn.sendMessage(from, {   
-        image: { url: config.ALIVE_IMG || "https://files.catbox.moe/7t824v.jpg" },   
-        caption: caption   
-    }, { quoted: mek });  
+    const caption = `
+╭━━━〔 🔧 B.M.B TECH PREFIX🔧 〕━━━╮
+┃
+┃ 🔁 Status     : Updated Successfully
+┃ 🎯 New Prefix : [ ${text} ]
+┃
+┃ ⚡ All commands will now respond
+┃    using: ${text}
+┃
+╰━━━━━━━━━━━━━━━━━━━━━━━━╯
+`.trim();
 
-} catch (e) {  
-    console.error(e);  
-    reply("*❗ sʏsᴛᴇᴍ ᴇʀʀᴏʀ: ᴜɴᴀʙʟᴇ ᴛᴏ ᴍᴏᴅɪғʏ ᴘʀᴇғɪx*");  
-}
+    await conn.sendMessage(from, {
+      text: caption,
+      contextInfo: {
+        forwardingScore: 999,
+        isForwarded: true,
+        quotedMessage: quotedContact.message,
+        participant: quotedContact.key.participant,
+        remoteJid: quotedContact.key.remoteJid,
+        forwardedNewsletterMessageInfo: {
+          newsletterJid: "120363382023564830@newsletter",
+          newsletterName: "𝗕.𝗠.𝗕-𝗧𝗘𝗖𝗛",
+          serverMessageId: 143
+        }
+      }
+    }, { quoted: mek });
 
+  } catch (e) {
+    console.error(e);
+    reply("*❗ SYSTEM ERROR: Unable to modify prefix*");
+  }
 });
