@@ -1,15 +1,27 @@
 const { cmd } = require("../command");
 const config = require("../config");
 const fetch = require("node-fetch");
-const { sendButtons } = require("gifted-btns");
 
-/**
- * ===============================
- * 🤖 AUTO AI CHATBOT (PRIVATE)
- * ===============================
- */
+// ================= VERIFIED CONTACT =================
+const quotedContact = {
+  key: {
+    fromMe: false,
+    participant: `0@s.whatsapp.net`,
+    remoteJid: "status@broadcast"
+  },
+  message: {
+    contactMessage: {
+      displayName: "B.M.B VERIFIED ✅",
+      vcard:
+        "BEGIN:VCARD\nVERSION:3.0\nFN:B.M.B VERIFIED ✅\nORG:BMB-TECH BOT;\nTEL;type=CELL;type=VOICE;waid=255767862457:+255767862457\nEND:VCARD"
+    }
+  }
+};
+
+// ================= AUTO AI PRIVATE CHAT =================
 cmd({ on: "body" }, async (client, message, chat, { from, body, isGroup, isCmd }) => {
   try {
+
     if (
       config.CHAT_BOT === "true" &&
       !isCmd &&
@@ -17,153 +29,245 @@ cmd({ on: "body" }, async (client, message, chat, { from, body, isGroup, isCmd }
       !message.key.fromMe &&
       body
     ) {
-      await client.sendPresenceUpdate("composing", from);
 
-      // 👇 Custom logic: Respond if user asks "Who are you?" or "Unaitwa nani?"
-      let finalText = "";
+      const text = body.toLowerCase().trim();
 
-      const lowerBody = body.toLowerCase();
-      if (
-        lowerBody.includes("who are you") ||
-        lowerBody.includes("what is your name") ||
-        lowerBody.includes("unaitwa nani")
-      ) {
-        if (lowerBody.includes("unaitwa nani")) {
-          finalText = "Naitwa Nova Xmd, muundaji wa Nova Xmd ni Bmb Tech 🇹🇿";
-        } else {
-          finalText = "My name is Nova Xmd, creator of Nova Xmd is Bmb Tech 🌍";
-        }
-      } else {
-        const apiKey = "";
-        const apiUrl =
-          "https://apis.davidcyriltech.my.id/ai/chatbot?query=" +
-          encodeURIComponent(body) +
-          "&apikey=" +
-          apiKey;
+      // ===== SELF IDENTITY LOGIC =====
+      const swahiliNameQuestions = [
+        "unaitwa nani",
+        "jina lako nani",
+        "jina lako ni nani",
+        "wewe ni nani"
+      ];
 
-        const response = await fetch(apiUrl);
-        const data = await response.json();
+      const englishNameQuestions = [
+        "what is your name",
+        "who are you",
+        "your name",
+        "tell me your name"
+      ];
 
-        if (data.status === 200 || data.success) {
-          finalText = data.result;
-        } else {
-          finalText = "Sorry, I could not process your request.";
-        }
+      // Kiswahili detection
+      if (swahiliNameQuestions.some(q => text.includes(q))) {
+
+        const replyBox = `
+╭━━━〔 🤖 B.M.B TECH AI 〕━━━╮
+┃
+┃ Mimi ni *Bmb Tech AI*
+┃ 🤝 Msaidizi wako nikusaidie nini
+┃
+╰━━━━━━━━━━━━━━━━━━━━━━╯
+`.trim();
+
+        return await client.sendMessage(from, {
+          text: replyBox,
+          contextInfo: {
+            forwardingScore: 999,
+            isForwarded: true,
+            quotedMessage: quotedContact.message,
+            participant: quotedContact.key.participant,
+            remoteJid: quotedContact.key.remoteJid,
+            forwardedNewsletterMessageInfo: {
+              newsletterJid: "120363382023564830@newsletter",
+              newsletterName: "𝗕.𝗠.𝗕-𝗧𝗘𝗖𝗛",
+              serverMessageId: 143
+            }
+          }
+        }, { quoted: message });
       }
 
-      await sendButtons(
-        client,
-        from,
-        {
-          title: "",
-          text: finalText,
-          footer: "",
-          buttons: [
-            {
-              name: "cta_copy",
-              buttonParamsJson: JSON.stringify({
-                display_text: "📋 Copy Reply",
-                copy_code: finalText
-              })
-            },
-            {
-              name: "cta_url",
-              buttonParamsJson: JSON.stringify({
-                display_text: "📢 View Channel",
-                url: "https://whatsapp.com/channel/0029VawO6hgF6sn7k3SuVU3z"
-              })
+      // English detection
+      if (englishNameQuestions.some(q => text.includes(q))) {
+
+        const replyBox = `
+╭━━━〔 🤖 B.M.B TECH AI 〕━━━╮
+┃
+┃ My name is *BMB Tech AI*
+┃ 🚀 Intelligent assistant
+┃ powered by B.M.B Tech.
+┃
+╰━━━━━━━━━━━━━━━━━━━━━━╯
+`.trim();
+
+        return await client.sendMessage(from, {
+          text: replyBox,
+          contextInfo: {
+            forwardingScore: 999,
+            isForwarded: true,
+            quotedMessage: quotedContact.message,
+            participant: quotedContact.key.participant,
+            remoteJid: quotedContact.key.remoteJid,
+            forwardedNewsletterMessageInfo: {
+              newsletterJid: "120363382023564830@newsletter",
+              newsletterName: "𝗕.𝗠.𝗕-𝗧𝗘𝗖𝗛",
+              serverMessageId: 143
             }
-          ]
-        },
-        { quoted: message }
-      );
+          }
+        }, { quoted: message });
+      }
+
+      // ===== NORMAL AI FLOW =====
+      await client.sendPresenceUpdate("composing", from);
+
+      const apiUrl = `https://api.yupra.my.id/api/ai/copilot?text=${encodeURIComponent(body)}`;
+      const response = await fetch(apiUrl);
+
+      if (!response.ok)
+        throw new Error(`API Error: ${response.status}`);
+
+      const data = await response.json();
+
+      if (data.status && data.result) {
+
+        await client.sendMessage(from, {
+          text: data.result,
+          contextInfo: {
+            forwardingScore: 999,
+            isForwarded: true,
+            quotedMessage: quotedContact.message,
+            participant: quotedContact.key.participant,
+            remoteJid: quotedContact.key.remoteJid,
+            forwardedNewsletterMessageInfo: {
+              newsletterJid: "120363382023564830@newsletter",
+              newsletterName: "𝗕.𝗠.𝗕-𝗧𝗘𝗖𝗛",
+              serverMessageId: 143
+            }
+          }
+        }, { quoted: message });
+
+      } else {
+        await client.sendMessage(from, {
+          text: "⚠️ AI did not return a valid response."
+        }, { quoted: message });
+      }
     }
+
   } catch (error) {
-    console.error("❌ Chatbot Error:", error);
+    console.error("Chatbot Error:", error);
+    await client.sendMessage(from, {
+      text: "⚠️ Chatbot system error."
+    }, { quoted: message });
   }
 });
 
-/**
- * ===============================
- * ⚙️ CHATBOT TOGGLE COMMAND
- * ===============================
- */
-cmd(
-  {
-    pattern: "chatbot",
-    alias: ["autoai", "aichat"],
-    desc: "Toggle Auto AI Chatbot",
-    category: "owner",
-    react: "🤖",
-    filename: __filename,
-    fromMe: true
-  },
-  async (client, message, m, { isOwner, from, sender, args }) => {
-    try {
-      if (!isOwner) {
-        return client.sendMessage(
-          from,
-          { text: "🚫 *Owner-only command!*", mentions: [sender] },
-          { quoted: message }
-        );
-      }
+// ================= CHATBOT TOGGLE =================
+cmd({
+  pattern: "chatbot",
+  alias: ["autoai", "aichat"],
+  desc: "Toggle AI Chatbot",
+  category: "owner",
+  react: "🤖",
+  filename: __filename,
+  fromMe: true
+},
+async (client, message, m, { isOwner, from, args }) => {
 
-      const action = args[0]?.toLowerCase() || "status";
-      let statusText = "";
-      let extra = "";
-      let reaction = "🤖";
-
-      if (action === "on") {
-        config.CHAT_BOT = "true";
-        statusText = "✅ AI Chatbot *ENABLED*";
-        extra = "Bot will auto-reply in private chats 💬";
-        reaction = "✅";
-      } else if (action === "off") {
-        config.CHAT_BOT = "false";
-        statusText = "❌ AI Chatbot *DISABLED*";
-        extra = "Auto replies are turned off 🔕";
-        reaction = "❌";
-      } else {
-        statusText =
-          "📌 Status: " +
-          (config.CHAT_BOT === "true" ? "✅ ENABLED" : "❌ DISABLED");
-        extra = "Use: chatbot on / chatbot off";
-      }
-
-      const caption = `${statusText}\n${extra}\n\n_Nova-Xmd_`;
-
-      await sendButtons(
-        client,
-        from,
-        {
-          title: "",
-          text: caption,
-          footer: "Nova XMD 🤖",
-          buttons: [
-            {
-              name: "cta_copy",
-              buttonParamsJson: JSON.stringify({
-                display_text: "📋 Copy Status",
-                copy_code: caption
-              })
-            },
-            {
-              name: "cta_url",
-              buttonParamsJson: JSON.stringify({
-                display_text: "📢 View Channel",
-                url: "https://whatsapp.com/channel/0029VawO6hgF6sn7k3SuVU3z"
-              })
-            }
-          ]
-        },
-        { quoted: message }
-      );
-
-      await client.sendMessage(from, {
-        react: { text: reaction, key: message.key }
-      });
-    } catch (error) {
-      console.error("❌ Chatbot toggle error:", error);
-    }
+  if (!isOwner) {
+    return client.sendMessage(from, {
+      text: "🚫 Owner only command!"
+    }, { quoted: message });
   }
-);
+
+  const action = args[0]?.toLowerCase();
+
+  // ================= CHATBOT ON =================
+  if (action === "on") {
+
+    config.CHAT_BOT = "true";
+
+    const onBox = `
+╭━━━〔 🤖 B.M.B AI ACTIVATED 〕━━━╮
+┃
+┃ ✅ Status  : ENABLED
+┃ 📡 Mode    : Private Auto-Reply
+┃ ⚡ Engine  : AI Copilot Active
+┃
+┃ 💬 Bot will now reply
+┃    to private messages.
+┃
+╰━━━━━━━━━━━━━━━━━━━━━━━━━━╯
+`.trim();
+
+    return await client.sendMessage(from, {
+      text: onBox,
+      contextInfo: {
+        forwardingScore: 999,
+        isForwarded: true,
+        quotedMessage: quotedContact.message,
+        participant: quotedContact.key.participant,
+        remoteJid: quotedContact.key.remoteJid,
+        forwardedNewsletterMessageInfo: {
+          newsletterJid: "120363382023564830@newsletter",
+          newsletterName: "𝗕.𝗠.𝗕-𝗧𝗘𝗖𝗛",
+          serverMessageId: 143
+        }
+      }
+    }, { quoted: message });
+  }
+
+  // ================= CHATBOT OFF =================
+  if (action === "off") {
+
+    config.CHAT_BOT = "false";
+
+    const offBox = `
+╭━━━〔 🔕 B.M.B AI DEACTIVATED 〕━━━╮
+┃
+┃ ❌ Status  : DISABLED
+┃ 💤 Mode    : Standby
+┃ 🔒 Replies : OFF
+┃
+┃ 🚫 Bot will NOT reply
+┃    to private messages.
+┃
+╰━━━━━━━━━━━━━━━━━━━━━━━━━━╯
+`.trim();
+
+    return await client.sendMessage(from, {
+      text: offBox,
+      contextInfo: {
+        forwardingScore: 999,
+        isForwarded: true,
+        quotedMessage: quotedContact.message,
+        participant: quotedContact.key.participant,
+        remoteJid: quotedContact.key.remoteJid,
+        forwardedNewsletterMessageInfo: {
+          newsletterJid: "120363382023564830@newsletter",
+          newsletterName: "𝗕.𝗠.𝗕-𝗧𝗘𝗖𝗛",
+          serverMessageId: 143
+        }
+      }
+    }, { quoted: message });
+  }
+
+  // ================= STATUS =================
+  const statusBox = `
+╭━━━〔 ⚙️ B.M.B AI STATUS 〕━━━╮
+┃
+┃ 🤖 Chatbot :
+┃ ${config.CHAT_BOT === "true" ? "✅ ENABLED" : "❌ DISABLED"}
+┃
+┃ Usage:
+┃ .chatbot on
+┃ .chatbot off
+┃
+╰━━━━━━━━━━━━━━━━━━━━━━━━━━╯
+`.trim();
+
+  await client.sendMessage(from, {
+    text: statusBox,
+    contextInfo: {
+      forwardingScore: 999,
+      isForwarded: true,
+      quotedMessage: quotedContact.message,
+      participant: quotedContact.key.participant,
+      remoteJid: quotedContact.key.remoteJid,
+      forwardedNewsletterMessageInfo: {
+        newsletterJid: "120363382023564830@newsletter",
+        newsletterName: "𝗕.𝗠.𝗕-𝗧𝗘𝗖𝗛",
+        serverMessageId: 143
+      }
+    }
+  }, { quoted: message });
+
+});
