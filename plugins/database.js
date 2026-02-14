@@ -74,23 +74,6 @@ async (conn, mek, m, { from, args, isCreator, reply }) => {
 });
 
 cmd({
-    pattern: "setprefix",
-    alias: ["prefix"],
-    react: "🔧",
-    desc: "Change the bot's command prefix.",
-    category: "settings",
-    filename: __filename,
-}, async (conn, mek, m, { from, args, isCreator, reply }) => {
-    if (!isCreator) return await sendResponse(conn, from, "*📛 Only the owner can use this command!*", m);
-
-    const newPrefix = args[0];
-    if (!newPrefix) return await sendResponse(conn, from, "❌ Please provide a new prefix. Example: `.setprefix !`", m);
-
-    config.PREFIX = newPrefix;
-    return await sendResponse(conn, from, `✅ Prefix successfully changed to *${newPrefix}*`, m);
-});
-
-cmd({
     pattern: "mode",
     alias: ["setmode"],
     react: "🫟",
