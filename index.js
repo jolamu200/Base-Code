@@ -131,7 +131,7 @@ async function connectToWA() {
           console.log('Plugins installed successful ✅')
           console.log('Bot connected to whatsapp ✅')
           const startMess = {
-            image: { url: 'https://files.catbox.moe/mxb907.jpg' },
+            image: { url: 'https://files.catbox.moe/yz5yle.jpg' },
             caption: `
 ───────────────────────────
 ───────────────────────────
