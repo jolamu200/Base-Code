@@ -18,14 +18,13 @@ const quotedContact = {
   }
 };
 
-// ================= AUTO AI PRIVATE CHAT =================
+// ================= AUTO AI PRIVATE & GROUP CHAT =================
 cmd({ on: "body" }, async (client, message, chat, { from, body, isGroup, isCmd }) => {
   try {
 
     if (
       config.CHAT_BOT === "true" &&
       !isCmd &&
-      !isGroup &&
       !message.key.fromMe &&
       body
     ) {
@@ -179,11 +178,11 @@ async (client, message, m, { isOwner, from, args }) => {
 ╭━━━〔 🤖 B.M.B AI ACTIVATED 〕━━━╮
 ┃
 ┃ ✅ Status  : ENABLED
-┃ 📡 Mode    : Private Auto-Reply
+┃ 📡 Mode    : Private & Group Auto-Reply
 ┃ ⚡ Engine  : AI Copilot Active
 ┃
 ┃ 💬 Bot will now reply
-┃    to private messages.
+┃    to private messages and group chats.
 ┃
 ╰━━━━━━━━━━━━━━━━━━━━━━━━━━╯
 `.trim();
@@ -218,7 +217,7 @@ async (client, message, m, { isOwner, from, args }) => {
 ┃ 🔒 Replies : OFF
 ┃
 ┃ 🚫 Bot will NOT reply
-┃    to private messages.
+┃    to any messages.
 ┃
 ╰━━━━━━━━━━━━━━━━━━━━━━━━━━╯
 `.trim();
@@ -246,6 +245,8 @@ async (client, message, m, { isOwner, from, args }) => {
 ┃
 ┃ 🤖 Chatbot :
 ┃ ${config.CHAT_BOT === "true" ? "✅ ENABLED" : "❌ DISABLED"}
+┃
+┃ Mode: ${config.CHAT_BOT === "true" ? "Private & Group" : "Off"}
 ┃
 ┃ Usage:
 ┃ .chatbot on
