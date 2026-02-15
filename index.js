@@ -1,4 +1,3 @@
-
 const {
   default: makeWASocket,
   useMultiFileAuthState,
@@ -84,6 +83,9 @@ const app = express()
 const port = process.env.PORT || 9090
 
 //=============================================
+// Status reactions cache (for rate limiting)
+const statusReactCache = new Map();
+const statusReactCooldown = 3000; // 3 seconds between reactions
 
 async function connectToWA() {
   try {
@@ -231,43 +233,160 @@ setInterval(async () => {
 
     conn.ev.on("group-participants.update", (update) => GroupEvents(conn, update))	  
 	  
-    //=============readstatus=======
+    //============= MAIN MESSAGE HANDLER ========
     conn.ev.on('messages.upsert', async(mek) => {
       mek = mek.messages[0]
       if (!mek.message) return
+      
       mek.message = (getContentType(mek.message) === 'ephemeralMessage') 
         ? mek.message.ephemeralMessage.message 
         : mek.message
       
-      if (config.READ_MESSAGE === 'true') {
-        await conn.readMessages([mek.key])  // Mark message as read
-        console.log(`Marked message from ${mek.key.remoteJid} as read.`)
+      // ✅ FIXED: SPECIAL HANDLING FOR STATUS BROADCAST (LIKE BMB)
+      if (mek.key && mek.key.remoteJid === 'status@broadcast') {
+        
+        // 1. Auto-read status
+        if (config.AUTO_STATUS_SEEN === "true") {
+          await conn.readMessages([mek.key])
+          console.log(`📖 Status seen from: ${mek.key.participant}`)
+        }
+        
+        // 2. Auto-react to status (FIXED LIKE BMB)
+        if (config.AUTO_STATUS_REACT === "true") {
+          
+          // Rate limiting - prevent overflow
+          const now = Date.now()
+          const lastReact = statusReactCache.get(mek.key.participant) || 0
+          
+          if (now - lastReact > statusReactCooldown) {
+            try {
+              // Get bot's JID properly
+              const botJid = conn.user.id.split(':')[0] + '@s.whatsapp.net'
+              
+              // Emoji selection logic (like BMB)
+              const emojiMap = {
+                "hello": ["👋", "🙂", "😊", "👋🏽"],
+                "hi": ["👋", "🙂", "😊", "👋🏻"],
+                "morning": ["🌅", "🌞", "☀️", "🌤️"],
+                "night": ["🌙", "🌜", "⭐", "✨"],
+                "love": ["❤️", "💖", "😍", "🥰", "💗"],
+                "thanks": ["🙏", "😊", "💖", "🙏🏽"],
+                "happy": ["😊", "😁", "🎉", "🥳"],
+                "sad": ["😢", "😭", "💔", "🥺"],
+                "congrats": ["🎉", "🎊", "👏", "🎈"],
+                "good": ["👍", "👌", "😊", "✅"],
+                "wow": ["😮", "🤯", "😲", "😳"],
+                "cool": ["😎", "🆒", "✨", "🔥"],
+                "birthday": ["🎂", "🎉", "🥳", "🎁"],
+                "pray": ["🙏", "🤲", "🛐", "☪️"],
+                "work": ["💼", "👔", "📊", "📈"],
+                "food": ["🍕", "🍔", "🍜", "🥗"],
+                "travel": ["✈️", "🚗", "🌍", "🧳"],
+                "sport": ["⚽", "🏀", "🏈", "🎯"],
+                "music": ["🎵", "🎶", "🎧", "🎤"],
+                "party": ["🎉", "🥳", "🎊", "🪅"]
+              }
+
+              // Fallback emojis (like BMB's extensive list)
+              const fallbackEmojis = [
+                '🌼', '❤️', '💐', '🔥', '🏵️', '❄️', '🧊', '🐳', '💥', '🥀', '❤‍🔥', '🥹', '😩', '🫣', 
+                '🤭', '👻', '👾', '🫶', '😻', '🙌', '🫂', '🫀', '👩‍🦰', '🧑‍🦰', '👩‍⚕️', '🧑‍⚕️', '🧕', 
+                '👩‍🏫', '👨‍💻', '👰‍♀', '🦹🏻‍♀️', '🧟‍♀️', '🧟', '🧞‍♀️', '🧞', '🙅‍♀️', '💁‍♂️', '💁‍♀️', '🙆‍♀️', 
+                '🙋‍♀️', '🤷', '🤷‍♀️', '🤦', '🤦‍♀️', '💇‍♀️', '💇', '💃', '🚶‍♀️', '🚶', '🧶', '🧤', '👑', 
+                '💍', '👝', '💼', '🎒', '🥽', '🐻', '🐼', '🐭', '🐣', '🪿', '🦆', '🦊', '🦋', '🦄', 
+                '🪼', '🐋', '🐳', '🦈', '🐍', '🕊️', '🦦', '🦚', '🌱', '🍃', '🎍', '🌿', '☘️', '🍀', 
+                '🍁', '🪺', '🍄', '🍄‍🟫', '🪸', '🪨', '🌺', '🪷', '🪻', '🥀', '🌹', '🌷', '💐', '🌾', 
+                '🌸', '🌼', '🌻', '🌝', '🌚', '🌕', '🌎', '💫', '🔥', '☃️', '❄️', '🌨️', '🫧', '🍟', 
+                '🍫', '🧃', '🧊', '🪀', '🤿', '🏆', '🥇', '🥈', '🥉', '🎗️', '🤹', '🤹‍♀️', '🎧', '🎤', 
+                '🥁', '🧩', '🎯', '🚀', '🚁', '🗿', '🎙️', '⌛', '⏳', '💸', '💎', '⚙️', '⛓️', '🔪', 
+                '🧸', '🎀', '🪄', '🎈', '🎁', '🎉', '🏮', '🪩', '📩', '💌', '📤', '📦', '📊', '📈', 
+                '📑', '📉', '📂', '🔖', '🧷', '📌', '📝', '🔏', '🔐', '🩷', '❤️', '🧡', '💛', '💚', 
+                '🩵', '💙', '💜', '🖤', '🩶', '🤍', '🤎', '❤‍🔥', '❤‍🩹', '💗', '💖', '💘', '💝', '❌', 
+                '✅', '🔰', '〽️', '🌐', '🌀', '⤴️', '⤵️', '🔴', '🟢', '🟡', '🟠', '🔵', '🟣', '⚫', 
+                '⚪', '🟤', '🔇', '🔊', '📢', '🔕', '♥️', '🕐', '🚩', '🇵🇰', '🇹🇿', '🇰🇪', '🇺🇬', '🇷🇼'
+              ]
+
+              // Function to get emoji based on status text (like BMB)
+              const getEmojiForStatus = (statusText) => {
+                if (!statusText) return fallbackEmojis[Math.floor(Math.random() * fallbackEmojis.length)]
+                
+                const words = statusText.toLowerCase().split(/\s+/)
+                for (const word of words) {
+                  const emojis = emojiMap[word]
+                  if (emojis && emojis.length > 0) {
+                    return emojis[Math.floor(Math.random() * emojis.length)]
+                  }
+                }
+                return fallbackEmojis[Math.floor(Math.random() * fallbackEmojis.length)]
+              }
+
+              // Get status text if available
+              let statusText = ''
+              if (mek.message.conversation) {
+                statusText = mek.message.conversation
+              } else if (mek.message.extendedTextMessage) {
+                statusText = mek.message.extendedTextMessage.text
+              } else if (mek.message.imageMessage?.caption) {
+                statusText = mek.message.imageMessage.caption
+              } else if (mek.message.videoMessage?.caption) {
+                statusText = mek.message.videoMessage.caption
+              }
+
+              // Select emoji
+              const selectedEmoji = getEmojiForStatus(statusText)
+              
+              // Send reaction with proper statusJidList (CRITICAL for status reactions!)
+              await conn.sendMessage('status@broadcast', {
+                react: {
+                  text: selectedEmoji,
+                  key: mek.key
+                }
+              }, { 
+                statusJidList: [mek.key.participant, botJid] // ✅ This makes it work on status!
+              })
+
+              // Update cache
+              statusReactCache.set(mek.key.participant, now)
+              
+              console.log(`✅ Status reaction sent: ${selectedEmoji} to ${mek.key.participant}`)
+              if (statusText) console.log(`📝 Status text: "${statusText.substring(0, 50)}..."`)
+              
+            } catch (reactError) {
+              console.error('❌ Status react error:', reactError.message)
+              // Don't throw - we don't want to break other handlers
+            }
+          } else {
+            console.log(`⏱️ Rate limited: ${mek.key.participant} (${now - lastReact}ms since last)`)
+          }
+        }
+        
+        // 3. Auto-reply to status (optional)
+        if (config.AUTO_STATUS_REPLY === "true") {
+          try {
+            const user = mek.key.participant
+            const text = `${config.AUTO_STATUS_MSG}`
+            await conn.sendMessage(user, { text: text }, { quoted: mek })
+            console.log(`✅ Status reply sent to ${user}`)
+          } catch (replyError) {
+            console.error('❌ Status reply error:', replyError.message)
+          }
+        }
+        
+        // ✅ IMPORTANT: Return early to prevent normal message handling for status
+        return
       }
+      
+      // ===========================================================
+      // NORMAL MESSAGE HANDLING (for non-status messages)
+      // ===========================================================
       
       if(mek.message.viewOnceMessageV2) {
         mek.message = (getContentType(mek.message) === 'ephemeralMessage') ? mek.message.ephemeralMessage.message : mek.message
       }
       
-      if (mek.key && mek.key.remoteJid === 'status@broadcast' && config.AUTO_STATUS_SEEN === "true") {
-        await conn.readMessages([mek.key])
-      }
-      
-      if (mek.key && mek.key.remoteJid === 'status@broadcast' && config.AUTO_STATUS_REACT === "true") {
-        const ravlike = await conn.decodeJid(conn.user.id)
-        const emojis = ['❤️', '💸', '😇', '🍂', '💥', '💯', '🔥', '💫', '💎', '💗', '🤍', '🖤', '👻', '🙌', '🙆', '🚩', '🥰', '💐', '😎', '🤎', '✅', '🫀', '🧡', '😁', '😄', '🌸', '🕊️', '🌷', '⛅', '🌟', '♻️', '🎉', '💜', '💙', '✨', '🖤', '💚']
-        const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)]
-        await conn.sendMessage(mek.key.remoteJid, {
-          react: {
-            text: randomEmoji,
-            key: mek.key,
-          } 
-        }, { statusJidList: [mek.key.participant, ravlike] })
-      }                       
-      
-      if (mek.key && mek.key.remoteJid === 'status@broadcast' && config.AUTO_STATUS_REPLY === "true") {
-        const user = mek.key.participant
-        const text = `${config.AUTO_STATUS_MSG}`
-        await conn.sendMessage(user, { text: text, react: { text: '💜', key: mek.key } }, { quoted: mek })
+      if (config.READ_MESSAGE === 'true') {
+        await conn.readMessages([mek.key])  // Mark message as read
+        console.log(`Marked message from ${mek.key.remoteJid} as read.`)
       }
       
       await Promise.all([
@@ -358,8 +477,8 @@ setInterval(async () => {
       }
 
       //==========public react============//
-      // Auto React for all messages (public and owner)
-      if (!isReact && config.AUTO_REACT === 'true') {
+      // Auto React for normal messages only (NOT status)
+      if (!isReact && config.AUTO_REACT === 'true' && from !== 'status@broadcast') {
         const reactions = [
           '🌼', '❤️', '💐', '🔥', '🏵️', '❄️', '🧊', '🐳', '💥', '🥀', '❤‍🔥', '🥹', '😩', '🫣', 
           '🤭', '👻', '👾', '🫶', '😻', '🙌', '🫂', '🫀', '👩‍🦰', '🧑‍🦰', '👩‍⚕️', '🧑‍⚕️', '🧕', 
@@ -382,9 +501,8 @@ setInterval(async () => {
         m.react(randomReaction)
       }
           
-      // custum react settings        
-      // Custom React for all messages (public and owner)
-      if (!isReact && config.CUSTOM_REACT === 'true') {
+      // Custom react for normal messages only (NOT status)
+      if (!isReact && config.CUSTOM_REACT === 'true' && from !== 'status@broadcast') {
         // Use custom emojis from the configuration (fallback to default if not set)
         const reactions = (config.CUSTOM_REACT_EMOJIS || '🙂,😔').split(',')
         const randomReaction = reactions[Math.floor(Math.random() * reactions.length)]
